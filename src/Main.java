@@ -11,15 +11,15 @@ import org.ini4j.Wini;
 
 public class Main {
     private static StringBuilder output = new StringBuilder();
-    
+
     public static void append(String s) {
         output.append(s);
     }
     public static void appendln(String s) {
         output.append(s + Constants.endl);
     }
-    
-    public static void main(String[] args) throws InvalidFileFormatException, IOException { 
+
+    public static void main(String[] args) throws InvalidFileFormatException, IOException {
         String fileName = (args.length > 0) ? args[0] : "config.ini";
         Wini ini = new Wini(new File(fileName));
         //set pokemon
@@ -37,17 +37,23 @@ public class Main {
             Settings.dataVersion = "brown";
         else
             Settings.dataVersion = "blue";
-        
+
         Settings.showGuarantees = ini.get("util", "showguarantees", boolean.class);
         Settings.includeCrits = ini.get("util", "includecrits", boolean.class);
-        
+
         Initialization.init();
-        
+
         IVs ivs = new IVs(atkIV,defIV,spdIV,spcIV);
         Pokemon p = null;
         Inventory inv = new Inventory(3000);
         try {
             p = new Pokemon(PokemonNames.getSpeciesFromName(species),level,ivs,false);
+            if(ini.get("poke").containsKey("boostedExp")) {
+                boolean boostedExp = ini.get("poke", "boostedExp", boolean.class);
+                if(boostedExp) {
+                    p.setBoostedExp();
+                }
+            }
         } catch(NullPointerException e) {
             appendln("Error in your config file. Perhaps you have an incorrect pokemon species name?");
             FileWriter fw = new FileWriter(ini.get("files", "outputFile"));
@@ -56,7 +62,7 @@ public class Main {
             bw.close();
         }
         List<GameAction> actions = RouteParser.parseFile(ini.get("files","routeFile"));
-        
+
         int[] XItems = {0,0,0,0,0}; //atk,def,spd,spc,acc
         int numBattles = 0;
         int rareCandies = 0;
@@ -65,7 +71,7 @@ public class Main {
         int protein = 0;
         int carbos = 0;
         int calcium = 0;
-        for(GameAction a : actions) {    
+        for(GameAction a : actions) {
         	try {
             a.performAction(p, inv);
             if (a instanceof Battle) {
@@ -94,8 +100,8 @@ public class Main {
         		System.out.println("exception parsing a game action ("+a+")");
         		ex.printStackTrace();
         	}
-        }        
-        
+        }
+
         if(ini.get("util", "printxitems", boolean.class)) {
             if(XItems[0] != 0)
                 appendln("X ATTACKS: " + XItems[0]);
@@ -111,7 +117,7 @@ public class Main {
             if(cost != 0)
                 appendln("X item cost: " + cost);
         }
-        
+
         if(ini.get("util", "printrarecandies", boolean.class)) {
             if(rareCandies != 0)
                 appendln("Total Rare Candies: " + rareCandies);
@@ -134,7 +140,7 @@ public class Main {
             }
         }
         //System.out.println("Total Battles: " + numBattles);
-        
+
         File fh = new File(ini.get("files","routeFile"));
         if(!(new File("outputs/")).exists()) {
             (new File("outputs/")).mkdir();
@@ -143,8 +149,8 @@ public class Main {
         BufferedWriter bw = new BufferedWriter(fw);
         bw.write(output.toString());
         bw.close();
-        
-        
-        
+
+
+
     }
 }

@@ -20,7 +20,8 @@ public class Pokemon implements Battleable {
     private boolean defBadge = false;
     private boolean spdBadge = false;
     private boolean spcBadge = false;
-    
+    private boolean boostedExp = false;
+
     //defaults to wild pokemon
     public Pokemon(Species s, int newLevel) {
         this(s, newLevel, true);
@@ -36,14 +37,14 @@ public class Pokemon implements Battleable {
         calculateStats();
         this.wild = wild;
         setExpForLevel();
-    }    
+    }
     //will work for leaders
     public Pokemon(Species s, int newLevel, Moveset moves, boolean wild) {
         this(s, newLevel, wild);
         this.moves = moves;
         calculateStats();
         setExpForLevel();
-    }    
+    }
     public Pokemon(Species s, int newLevel, IVs ivs, boolean wild) {
         species = s;
         level = newLevel;
@@ -64,7 +65,11 @@ public class Pokemon implements Battleable {
         this.wild = wild;
         setExpForLevel();
     }
-    
+
+    public void setBoostedExp() {
+        boostedExp = true;
+    }
+
     //TODO constructor which accepts EVs
     public void setZeroEVs() {
     	ev_hp = ev_hp_used = 0;
@@ -73,7 +78,7 @@ public class Pokemon implements Battleable {
 		ev_spc = ev_spc_used = 0;
 		ev_spd = ev_spd_used = 0;
     }
-    
+
     //call this to update your stats
     //automatically called on level ups/rare candies, but not just from gaining stat EV
     public void calculateStats() {
@@ -114,7 +119,7 @@ public class Pokemon implements Battleable {
         totalExp = ExpCurve.lowestExpForLevel(species.getCurve(), level);
     }
     //TODO: EV setter
-    
+
     public int getHP() {
         return hp;
     }
@@ -172,12 +177,12 @@ public class Pokemon implements Battleable {
         return (species.getKillExp() / participants) * level / 7 * 3
                 / (isWild() ? 3 : 2);
     }
-    
-    
+
+
     public String toString() {
         return statsWithBoost();
     }
-    
+
     public String statsWithBoost() {
         String endl = Constants.endl;
         StringBuilder sb = new StringBuilder();
@@ -193,9 +198,9 @@ public class Pokemon implements Battleable {
         sb.append(String.format("EV%1$7s%2$7s%3$7s%4$7s%5$7s",
                 ev_hp,ev_atk,ev_def,ev_spd,ev_spc) + endl);
         sb.append(moves.toString() + endl);
-        return sb.toString();  
+        return sb.toString();
     }
-    
+
     public String statsWithoutBoost() {
         String endl = Constants.endl;
         StringBuilder sb = new StringBuilder();
@@ -210,10 +215,10 @@ public class Pokemon implements Battleable {
         sb.append(String.format("EV%1$7s%2$7s%3$7s%4$7s%5$7s",
                 ev_hp,ev_atk,ev_def,ev_spd,ev_spc) + endl);
         sb.append(moves.toString() + endl);
-        return sb.toString();  
+        return sb.toString();
     }
-    
-    
+
+
     //utility getters
     public String levelName() {
         return "L" + level + " " + getSpecies().getName();
@@ -224,7 +229,7 @@ public class Pokemon implements Battleable {
     public String statsStr() {
         return String.format("%s/%s/%s/%s/%s",getHP(),getAtk(),getDef(),getSpd(),getSpc());
     }
-    
+
     //experience methods
     //exp needed to get to next level
     public int expToNextLevel() {
@@ -235,10 +240,10 @@ public class Pokemon implements Battleable {
         return ExpCurve.expForLevel(species.getCurve(), level);
     }
     //in game actions
-    
+
     //gain num exp
     private void gainExp(int num) {
-        totalExp += num;
+        totalExp += num * 3 / (boostedExp ? 2 : 3);
         //update lvl if necessary
         while(expToNextLevel() <= 0 && level < 100) {
             level++;
@@ -261,7 +266,7 @@ public class Pokemon implements Battleable {
     private int capEV(int ev) {
         return Math.min(ev, 65535);
     }
-    
+
     @Override
     public void battle(Pokemon p, BattleOptions options, int pokemonIndex) {
         //p is the one that gets leveled up
@@ -275,7 +280,7 @@ public class Pokemon implements Battleable {
     public int prizeMoney() {
         return 0;
     }
-    
+
     //gains from eating stat/level boosters
     public void eatRareCandy() {
         if(level != 100) {
@@ -314,12 +319,12 @@ public class Pokemon implements Battleable {
         ev_spd += 2560;
         calculateStats();
     }
-    
+
     //TODO: proper evolution
     public void evolve(Species s) {
         species = s;
     }
-    
+
     //badge get/set
     public boolean isAtkBadge() {
         return atkBadge;
@@ -357,7 +362,7 @@ public class Pokemon implements Battleable {
         spdBadge = false;
         spcBadge = false;
     }
-    
+
     //a printout of stat ranges given this pokemon's EVs (not IVs)
     public String statRanges(boolean isBoosted) {
         int[] possibleHPs = new int[16];
@@ -372,7 +377,7 @@ public class Pokemon implements Battleable {
                 possibleDefs[i] = 9 * calcDefWithIV(i) / 8;
                 possibleSpds[i] = 9 * calcSpdWithIV(i) / 8;
                 possibleSpcs[i] = 9 * calcSpcWithIV(i) / 8;
-            } 
+            }
         } else {
             for(int i = 0; i < 16; i++) {
                 possibleHPs[i] = calcHPWithIV(i);
@@ -384,7 +389,7 @@ public class Pokemon implements Battleable {
         }
         StringBuilder sb = new StringBuilder(levelName() + Constants.endl);
         sb.append("Stat ranges " + (isBoosted ? "WITH" : "WITHOUT") + " badge boosts:" + Constants.endl);
-        sb.append("IV  |0   |1   |2   |3   |4   |5   |6   |7   |8   |9   |10  |11  |12  |13  |14  |15  " + Constants.endl + 
+        sb.append("IV  |0   |1   |2   |3   |4   |5   |6   |7   |8   |9   |10  |11  |12  |13  |14  |15  " + Constants.endl +
                   "------------------------------------------------------------------------------------" + Constants.endl);
         sb.append("HP  ");
         for(int i = 0; i < 16; i++) {
@@ -411,7 +416,7 @@ public class Pokemon implements Battleable {
             sb.append(String.format("|%1$4s", possibleSpcs[i]));  //pad left, length 4
         }
         sb.append(Constants.endl);
-        
+
         return sb.toString();
     }
 }
